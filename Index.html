@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Interview System</title>
+  <style>
+    body { font-family: Arial; text-align: center; background: #f5f5f5; }
+    .box { background: white; padding: 20px; margin: 20px auto; width: 60%; border-radius: 10px; }
+    button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+    #result { text-align: left; }
+  </style>
+</head>
+
+<body>
+
+<h1>AI Interview System</h1>
+
+<div class="box">
+  <h2>Question</h2>
+  <p id="question">Click Start</p>
+  <button onclick="getQuestion()">Start Interview</button>
+</div>
+
+<div class="box">
+  <h2>Your Answer</h2>
+  <p id="answer"></p>
+  <button onclick="startListening()">🎤 Speak</button>
+  <button onclick="submitAnswer()">Submit Answer</button>
+</div>
+
+<div class="box">
+  <h2>Evaluation</h2>
+  <pre id="evaluation"></pre>
+</div>
+
+<div class="box">
+  <h2>Final Report</h2>
+  <button onclick="getFinal()">Get Final Feedback</button>
+  <pre id="result"></pre>
+</div>
+
+<script>
+let currentQuestion = "";
+let currentAnswer = "";
+let qa_list = [];
+
+async function getQuestion() {
+  let res = await fetch("http://localhost:5000/ask-question");
+  let data = await res.json();
+  currentQuestion = data.question;
+  document.getElementById("question").innerText = currentQuestion;
+}
+
+async function startListening() {
+  let res = await fetch("http://localhost:5000/speech-to-text");
+  let data = await res.json();
+  currentAnswer = data.text;
+  document.getElementById("answer").innerText = currentAnswer;
+}
+
+async function submitAnswer() {
+  let res = await fetch("http://localhost:5000/evaluate", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      question: currentQuestion,
+      answer: currentAnswer
+    })
+  });
+
+  let data = await res.json();
+  document.getElementById("evaluation").innerText = data.result;
+
+  qa_list.push({
+    question: currentQuestion,
+    answer: currentAnswer
+  });
+}
+
+async function getFinal() {
+  let res = await fetch("http://localhost:5000/overall-feedback", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ qa_list })
+  });
+
+  let data = await res.json();
+  document.getElementById("result").innerText = data.result;
+}
+</script>
+
+</body>
+</html>
